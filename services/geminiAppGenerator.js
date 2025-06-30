@@ -92,14 +92,13 @@ Your output must satisfy the following:
 - Do not leave out config files
 
 📝 Output Instructions
-- Output each file in its own code block
-- Precede each file with the **full filename** as a heading (e.g. \`pages/index.js\`)
-- Do NOT wrap code in Markdown backticks or explanations — just raw code blocks
-
-This output will be parsed automatically. Precision is required.
-  `;
+- For each file, output its contents in a Markdown code block (using triple backticks)
+- The first line inside each code block must be a comment with the file path (e.g. // pages/index.js)
+- Do not include any other explanations or text between code blocks
+- Each code block should contain only one file
+- Ensure the output is a complete, deployable Next.js app with all necessary files and configurations
+`;
 }
-
 
 // Improved parser to handle markdown format and extract filenames and contents
 async function writeFilesFromResponse(responseText, outputDir) {

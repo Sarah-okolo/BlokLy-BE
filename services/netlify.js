@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs-extra');
 const archiver = require('archiver');
-const { execa } = require('execa');
+import { execa } from 'execa';
 const { NetlifyAPI } = require('netlify');
 
 const NETLIFY_AUTH_TOKEN = process.env.NETLIFY_AUTH_TOKEN;
