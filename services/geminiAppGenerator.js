@@ -106,6 +106,7 @@ Your output must satisfy the following:
 - Do not include any other explanations or text between code blocks
 - For files like \`_redirects\`, place them under \`public/_redirects\` and include them in plain code blocks
 - Ensure the output includes an \`index.html\` file at the root of the app folder, with a proper root div and the Vite-expected script tag
+- Never place the \`index.html\` inside a subfolder like \`public\` or \`src\` — it must be at the root of the output directory
 - The output must be a complete, deployable React app with all necessary files and configurations
 - Ensure the site is fully functional, and as visually appealing as possible
 `;
