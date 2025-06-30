@@ -38,10 +38,21 @@ async function deployToNetlify({ siteName, projectPath }) {
       );
     }
 
-    console.log(`🗂️ Zipping ${projectPath}...`);
-    const zipPath = path.join(projectPath, 'deploy.zip');
-    await zipDirectory(projectPath, zipPath);
+    console.log('🔃 Installing dependencies...');
+    await execa('npm', ['install'], { cwd: projectPath });
 
+    // 🔨 Build the Vite app
+    console.log('📦 Building Vite project...');
+    await execa('npx', ['vite', 'build'], { cwd: projectPath });
+    
+
+    const distPath = path.join(projectPath, 'dist');
+
+    // 🗂️ Zip the built output (optional, not required by Netlify CLI, but useful if you're saving it)
+    const zipPath = path.join(projectPath, 'deploy.zip');
+    await zipDirectory(distPath, zipPath);
+
+    // 🚀 Create and deploy to Netlify
     console.log('🌐 Creating Netlify site and deploying...');
     const site = await netlify.createSite({ body: { name: `${siteName}-${Date.now()}` } });
     const siteId = site.id;
@@ -49,7 +60,7 @@ async function deployToNetlify({ siteName, projectPath }) {
     const { stdout } = await execa('npx', [
       'netlify',
       'deploy',
-      '--dir', projectPath,
+      '--dir', distPath,      // 🔥 Deploy the built output
       '--prod',
       '--auth', process.env.NETLIFY_AUTH_TOKEN,
       '--message', 'Auto-deploy via BlokLy',

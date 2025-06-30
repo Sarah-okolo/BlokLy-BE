@@ -52,7 +52,7 @@ Original Prompt: ${prompt}
 
 function buildPrompt(project) {
   return `
-You are to generate a fully functional, production-ready **static** Next.js app using the following project details.
+You are to generate a fully functional, production-ready **static** React app using the following project details.
 
 Project Theme: ${project.theme}
 Project Name: ${project.name}
@@ -66,44 +66,46 @@ Your output must satisfy the following:
 
 📁 General
 - Use functional React components
-- Use Tailwind CSS (ensure full setup: config, import in globals.css, etc.)
+- Use Tailwind CSS (ensure full setup: tailwind.config.js, postcss.config.js, import in index.css, etc.)
 - Generate a valid package.json with scripts:
-  - "dev": "next dev"
-  - "build": "next build && next export"
-  - "start": "serve out" (if serve is needed, add to dependencies)
-- Add next.config.js with: output: 'export
-- Create the index.html file and link a script path to the index.js file
+  - "start": "vite"
+  - "build": "vite build"
+  - "serve": "vite preview" (for local testing)
+- Use Vite as the build tool (assume \`npm create vite@latest\` with React + JavaScript template)
+- Create the index.html file at the root, with proper mount point and linked script from Vite
 
 🌍 Routing
+- Use \`react-router-dom\` for client-side routing
 - Include at least:
-  - \`pages/index.js\` — homepage
-  - \`pages/404.js\` — custom 404 page
+  - \`src/pages/Home.jsx\` — homepage
+  - \`src/pages/NotFound.jsx\` — 404 page
   - 1–2 other meaningful pages based on the content
-- Avoid dynamic SSR routes (like \`getServerSideProps\`)
+- Setup \`src/App.jsx\` with appropriate routes
+- Ensure all pages are functional and linked correctly
 
 ⚙️ Netlify Support
 - Add a valid \`netlify.toml\`:
-  - \`[build]\` block with \`publish = "out"\` and \`command = "npm run build"\`
+  - \`[build]\` block with \`publish = "dist"\` and \`command = "npm run build"\`
 - Add \`public/_redirects\` with: \`/* /index.html 200\`
 
 🔨 Build System
-- Assume this is generated and deployed automatically, so all critical files **must be present**
-- Do not omit required files like \`index.html\` (ensure export works)
-- Do not leave out config files
+- All necessary project files must be present
+- Do not omit config files like \`vite.config.js\`, \`tailwind.config.js\`, \`index.html\`, etc.
+- Include all setup required for Tailwind CSS to work with Vite and React
 
 📝 Output Instructions
-- Output each file in a separate code blocks
+- Output each file in a separate code block
 - Each code block should contain only one file
-- Important! Inside each code block start with a single line comment on the first line containing the filename (e.g. // pages/index.js). 
+- Important! Inside each code block, start with a single-line comment on the **first line** containing the filename (e.g. \`// src/pages/Home.jsx\`)
 - Make sure the filename is the first line INSIDE the code block
-- Ensure the filename is not placed outside the code block.
 - Do not include any other explanations or text between code blocks
 - For files like \`_redirects\`, place them under \`public/_redirects\` and include them in plain code blocks
-- Ensure the output includes an \`index.html\` file at the root of the app folder
-- In the \`index.html\`, include a \`<script src="pages/index.js"></script>\` tag or equivalent, so Netlify knows how to start the app
-- Ensure the output is a complete, deployable Next.js app with all necessary files and configurations
+- Ensure the output includes an \`index.html\` file at the root of the app folder, with a proper root div and the Vite-expected script tag
+- The output must be a complete, deployable React app with all necessary files and configurations
+- Ensure the site is fully functional, and as visually appealing as possible
 `;
 }
+
 
 // Improved parser to handle markdown format and extract filenames and contents
 async function writeFilesFromResponse(responseText, outputDir) {
@@ -115,31 +117,20 @@ async function writeFilesFromResponse(responseText, outputDir) {
   let currentFile = null;
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+    const line = lines[i];
 
-    // Check for filename line outside code block
-    if (!capturing && line.startsWith('//')) {
-      const match = line.match(/^\/\/\s*(.+)$/);
-      if (match) {
-        currentFile = match[1].trim();
-      }
-      continue;
-    }
-
-    // Start or end of code block
-    if (line.startsWith('```')) {
+    // Detect start or end of code block
+    if (line.trim().startsWith('```')) {
       capturing = !capturing;
 
-      if (!capturing) {
-        // Closing block: flush the file
-        if (currentFile && currentContent.length) {
-          fileBlocks.push({
-            filePath: currentFile,
-            content: currentContent.join('\n'),
-          });
-        }
+      // Closing code block
+      if (!capturing && currentFile && currentContent.length) {
+        fileBlocks.push({
+          filePath: currentFile,
+          content: currentContent.join('\n'),
+        });
 
-        // Reset for next block
+        // Reset
         currentContent = [];
         currentFile = null;
       }
@@ -147,21 +138,27 @@ async function writeFilesFromResponse(responseText, outputDir) {
       continue;
     }
 
-    // Capture content inside code block
-    if (capturing && currentFile) {
-      currentContent.push(lines[i]); // preserve indentation
+    // Inside code block
+    if (capturing) {
+      if (!currentFile) {
+        // First line inside the code block should be: // path/to/file.ext
+        const trimmed = line.trim();
+        const match = trimmed.match(/^\/\/\s*(.+)$/);
+        if (match) {
+          currentFile = match[1].trim();
+        } else {
+          // If the first line isn't a valid filename, skip this block
+          capturing = false;
+          currentContent = [];
+          currentFile = null;
+        }
+      } else {
+        currentContent.push(line); // Preserve original indentation
+      }
     }
   }
 
-  // Final flush (in case of unclosed code block)
-  if (capturing && currentFile && currentContent.length) {
-    fileBlocks.push({
-      filePath: currentFile,
-      content: currentContent.join('\n'),
-    });
-  }
-
-  // Write files
+  // Write all the captured files
   for (const { filePath, content } of fileBlocks) {
     const fullPath = path.join(outputDir, filePath);
     await fs.ensureDir(path.dirname(fullPath));

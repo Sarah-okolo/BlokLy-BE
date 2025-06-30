@@ -19,7 +19,7 @@ async function zipDirectory(sourceDir, outZipPath) {
   });
 }
 
-async function deployToNetlify({ siteName = 'bubbly',  projectPath = '/home/sahra/BlokLy-BE/generated/90aaf70e-56a5-4685-b001-132df962f8e4' }) {
+async function deployToNetlify({ siteName = 'bubbly',  projectPath = '/home/sahra/BlokLy-BE/generated/a6aad34b-4875-460e-bd7c-46c810da60bf' }) {
   try {
     console.log(`🗂️ Zipping ${projectPath}...`);
     const zipPath = path.join(projectPath, 'deploy.zip');
