@@ -92,6 +92,11 @@ Your output must satisfy the following:
 - All necessary project files must be present
 - Do not omit config files like \`vite.config.js\`, \`tailwind.config.js\`, \`index.html\`, etc.
 - Include all setup required for Tailwind CSS to work with Vite and React
+- Ensure the app builds cleanly using \`vite build\` with no errors
+- Do not use deprecated or removed Tailwind classes like \`focus:shadow-outline\`
+- Ensure all \`@apply\` directives reference valid Tailwind utilities or are defined within a \`@layer\` block
+- All imports must resolve correctly — do not reference missing packages or files
+- All dependencies must be declared in \`package.json\` (including \`vite\`, \`react\`, \`react-dom\`, \`react-router-dom\`, \`tailwindcss\`, \`postcss\`, \`autoprefixer\`, etc.)
 
 📝 Output Instructions
 - Output each file in a separate code block
@@ -105,6 +110,7 @@ Your output must satisfy the following:
 - Ensure the site is fully functional, and as visually appealing as possible
 `;
 }
+
 
 
 // Improved parser to handle markdown format and extract filenames and contents
