@@ -1,0 +1,10 @@
+```toml
+[build]
+publish = "out"
+command = "npm run build"
+```
+
+// public/_redirects
+```
+/* /index.html 200
+```

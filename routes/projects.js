@@ -3,7 +3,6 @@ const router = express.Router();
 const { generateNameAndDesc } = require('../services/gemini');
 const { generateNextApp } = require('../services/geminiAppGenerator');
 const { deployToNetlify } = require('../services/netlify');
-const { getDB } = require('../config/db');
 
 router.post('/generate', async (req, res) => {
   const project = req.body;
@@ -20,7 +19,7 @@ router.post('/generate', async (req, res) => {
       const { name, description } = await generateNameAndDesc(sectionNames);
       project.name = project.name || name;
       project.description = project.description || description;
-      console.log('✨✨Generated name and desc:', project.name, project.description);
+      console.log('✨✨Generated name:', project.name, '🚀Generated desc:', project.description);
     }
 
     // Step 2: Generate code with gemini
@@ -34,12 +33,12 @@ router.post('/generate', async (req, res) => {
     });
     console.log('🚀 Site deployed successfully to Netlify:', siteUrl);
 
-    // Step 4: Save to DB
-    await getDB().collection('projects').insertOne({
-      ...project,
-      url: siteUrl,
-      createdAt: new Date(),
-    });
+    // // Step 4: Save to DB
+    // await getDB().collection('projects').insertOne({
+    //   ...project,
+    //   url: siteUrl,
+    //   createdAt: new Date(),
+    // });
 
     // Done!
     res.status(200).json({ 

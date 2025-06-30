@@ -1,0 +1,10 @@
+```
+// This is a placeholder. Replace with your actual favicon.ico file.
+// You can use a real icon or a small text file.
+This is a placeholder favicon.ico
+```
+
+// public/_redirects
+```
+/* /index.html 200
+```

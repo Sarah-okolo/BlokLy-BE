@@ -72,7 +72,7 @@ Your output must satisfy the following:
   - "build": "next build && next export"
   - "start": "serve out" (if serve is needed, add to dependencies)
 - Add next.config.js with: output: 'export
-- Include an index.html via static export (automatically done by \`next export\`)
+- Create the index.html file and link a script path to the index.js file
 
 🌍 Routing
 - Include at least:
@@ -92,10 +92,15 @@ Your output must satisfy the following:
 - Do not leave out config files
 
 📝 Output Instructions
-- For each file, output its contents in a Markdown code block (using triple backticks)
-- The first line inside each code block must be a comment with the file path (e.g. // pages/index.js)
-- Do not include any other explanations or text between code blocks
+- Output each file in a separate code blocks
 - Each code block should contain only one file
+- Important! Inside each code block start with a single line comment on the first line containing the filename (e.g. // pages/index.js). 
+- Make sure the filename is the first line INSIDE the code block
+- Ensure the filename is not placed outside the code block.
+- Do not include any other explanations or text between code blocks
+- For files like \`_redirects\`, place them under \`public/_redirects\` and include them in plain code blocks
+- Ensure the output includes an \`index.html\` file at the root of the app folder
+- In the \`index.html\`, include a \`<script src="pages/index.js"></script>\` tag or equivalent, so Netlify knows how to start the app
 - Ensure the output is a complete, deployable Next.js app with all necessary files and configurations
 `;
 }
@@ -110,46 +115,43 @@ async function writeFilesFromResponse(responseText, outputDir) {
   let currentFile = null;
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    const line = lines[i].trim();
 
-    // Start or end of code block
+    // Start of code block (e.g. ``` or ```javascript)
     if (line.startsWith('```')) {
-      if (!capturing) {
-        // starting code block
-        capturing = true;
+      capturing = !capturing;
+
+      // When starting, reset buffers
+      if (capturing) {
         currentContent = [];
         currentFile = null;
-      } else {
-        // ending code block
-        capturing = false;
-        if (currentFile && currentContent.length) {
-          fileBlocks.push({
-            filePath: currentFile,
-            content: currentContent.join('\n'),
-          });
-        }
-        currentContent = [];
-        currentFile = null;
+      } else if (currentFile && currentContent.length) {
+        // When ending, push the file
+        fileBlocks.push({
+          filePath: currentFile,
+          content: currentContent.join('\n'),
+        });
       }
+
       continue;
     }
 
-    // If inside a code block, collect content
     if (capturing) {
-      // Try to extract the filename from a comment at the start
-      if (!currentFile) {
-        const fileMatch = line.trim().match(/^\/\/\s*(.+\.\w+)$/);
-        if (fileMatch) {
-          currentFile = fileMatch[1].trim();
-          continue; // don't include this line in file content
+      if (!currentFile && line.startsWith('//')) {
+        const match = line.match(/^\/\/\s*(.+)$/);
+        if (match) {
+          currentFile = match[1].trim();
+          continue; // skip filename line
         }
       }
 
-      currentContent.push(line);
+      if (currentFile) {
+        currentContent.push(lines[i]); // preserve original indentation
+      }
     }
   }
 
-  // Final flush (in case there's no closing ``` at end)
+  // Final flush in case of unclosed block
   if (capturing && currentFile && currentContent.length) {
     fileBlocks.push({
       filePath: currentFile,
@@ -157,7 +159,7 @@ async function writeFilesFromResponse(responseText, outputDir) {
     });
   }
 
-  // Write each file to disk
+  // Write files
   for (const { filePath, content } of fileBlocks) {
     const fullPath = path.join(outputDir, filePath);
     await fs.ensureDir(path.dirname(fullPath));
