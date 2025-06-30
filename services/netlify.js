@@ -1,8 +1,17 @@
 const path = require('path');
 const fs = require('fs-extra');
 const archiver = require('archiver');
-import { execa } from 'execa';
 const { NetlifyAPI } = require('netlify');
+
+let execa; // Declare in the outer scope
+
+(async () => {
+  ({ execa } = await import('execa')); // Load the named export and assign
+
+  // You can test it here if needed:
+  const { stdout } = await execa('echo', ['hello']);
+  console.log(stdout);
+})();
 
 const NETLIFY_AUTH_TOKEN = process.env.NETLIFY_AUTH_TOKEN;
 const netlify = new NetlifyAPI(NETLIFY_AUTH_TOKEN);
@@ -18,7 +27,7 @@ async function zipDirectory(sourceDir, outZipPath) {
   });
 }
 
-async function deployToNetlify({ siteName,  projectPath }) {
+async function deployToNetlify({ siteName, projectPath }) {
   try {
     console.log(`🗂️ Zipping ${projectPath}...`);
     const zipPath = path.join(projectPath, 'deploy.zip');
@@ -26,11 +35,10 @@ async function deployToNetlify({ siteName,  projectPath }) {
 
     console.log('🌐 Creating Netlify site and deploying...');
 
-    // Create a new site with the specified name
     const site = await netlify.createSite({ body: { name: `${siteName}-${Date.now()}` } });
     const siteId = site.id;
 
-    // Run Netlify deploy CLI with the newly created site
+    // Now execa is available here
     const { stdout } = await execa('npx', [
       'netlify',
       'deploy',
@@ -43,7 +51,6 @@ async function deployToNetlify({ siteName,  projectPath }) {
 
     console.log(stdout);
 
-    // Try to extract the URL from CLI output
     const urlMatch = stdout.match(/https:\/\/[^\s]+\.netlify\.app/);
     if (urlMatch) {
       const deployedUrl = urlMatch[0];
@@ -56,8 +63,8 @@ async function deployToNetlify({ siteName,  projectPath }) {
   } catch (err) {
     console.error('[Netlify] Deployment failed:', err.message);
     if (err.body) {
-    console.error('Details:', err.body);
-  }
+      console.error('Details:', err.body);
+    }
     throw new Error('Netlify deployment failed.');
   }
 }
