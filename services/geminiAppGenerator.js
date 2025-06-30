@@ -117,41 +117,43 @@ async function writeFilesFromResponse(responseText, outputDir) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
 
-    // Start of code block (e.g. ``` or ```javascript)
+    // Check for filename line outside code block
+    if (!capturing && line.startsWith('//')) {
+      const match = line.match(/^\/\/\s*(.+)$/);
+      if (match) {
+        currentFile = match[1].trim();
+      }
+      continue;
+    }
+
+    // Start or end of code block
     if (line.startsWith('```')) {
       capturing = !capturing;
 
-      // When starting, reset buffers
-      if (capturing) {
+      if (!capturing) {
+        // Closing block: flush the file
+        if (currentFile && currentContent.length) {
+          fileBlocks.push({
+            filePath: currentFile,
+            content: currentContent.join('\n'),
+          });
+        }
+
+        // Reset for next block
         currentContent = [];
         currentFile = null;
-      } else if (currentFile && currentContent.length) {
-        // When ending, push the file
-        fileBlocks.push({
-          filePath: currentFile,
-          content: currentContent.join('\n'),
-        });
       }
 
       continue;
     }
 
-    if (capturing) {
-      if (!currentFile && line.startsWith('//')) {
-        const match = line.match(/^\/\/\s*(.+)$/);
-        if (match) {
-          currentFile = match[1].trim();
-          continue; // skip filename line
-        }
-      }
-
-      if (currentFile) {
-        currentContent.push(lines[i]); // preserve original indentation
-      }
+    // Capture content inside code block
+    if (capturing && currentFile) {
+      currentContent.push(lines[i]); // preserve indentation
     }
   }
 
-  // Final flush in case of unclosed block
+  // Final flush (in case of unclosed code block)
   if (capturing && currentFile && currentContent.length) {
     fileBlocks.push({
       filePath: currentFile,
