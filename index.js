@@ -2,7 +2,6 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 require('dotenv').config();
-const { connectToDB } = require('./config/db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,8 +14,6 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
-// Connect DB
-connectToDB();
 
 app.get('/', (req, res) => {
   res.send('✨BlokLy Backend is running!🚀🚀🌟💫')
